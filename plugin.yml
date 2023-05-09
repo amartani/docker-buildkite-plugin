@@ -99,6 +99,12 @@ configuration:
       type: array
     ulimits:
       type: array
+    prepend-ecr-domain:
+      type: boolean
+    ecr-account-id:
+      type: string
+    ecr-region:
+      type: string
   required:
     - image
   additionalProperties: false

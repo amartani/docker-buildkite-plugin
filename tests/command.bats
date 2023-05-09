@@ -1242,3 +1242,68 @@ EOF
 
   unstub docker
 }
+
+@test "Prepend ECR domain" {
+  export BUILDKITE_PLUGIN_DOCKER_MOUNT_BUILDKITE_AGENT=false
+  export BUILDKITE_PLUGIN_DOCKER_PREPEND_ECR_DOMAIN=true
+  export AWS_DEFAULT_REGION="us-east-1"
+  export BUILDKITE_COMMAND="pwd"
+
+  stub aws \
+    "sts get-caller-identity --query Account --output text : echo '123456789012'"
+  stub docker \
+    "run -t -i --rm --init --volume $PWD:/workdir --workdir /workdir --label com.buildkite.job-id=1-2-3-4 123456789012.dkr.ecr.us-east-1.amazonaws.com/image:tag /bin/sh -e -c 'pwd' : echo ran command in docker"
+
+  run "$PWD"/hooks/command
+
+  assert_success
+  assert_output --partial "ran command in docker"
+
+  unstub aws
+  unstub docker
+}
+
+@test "Prepend ECR domain with explicit account and region" {
+  export BUILDKITE_PLUGIN_DOCKER_MOUNT_BUILDKITE_AGENT=false
+  export BUILDKITE_PLUGIN_DOCKER_PREPEND_ECR_DOMAIN=true
+  export BUILDKITE_PLUGIN_DOCKER_ECR_ACCOUNT_ID="123456789012"
+  export BUILDKITE_PLUGIN_DOCKER_ECR_REGION="us-west-1"
+  export AWS_DEFAULT_REGION="us-east-1"
+  export BUILDKITE_COMMAND="pwd"
+
+  stub docker \
+    "run -t -i --rm --init --volume $PWD:/workdir --workdir /workdir --label com.buildkite.job-id=1-2-3-4 123456789012.dkr.ecr.us-west-1.amazonaws.com/image:tag /bin/sh -e -c 'pwd' : echo ran command in docker"
+
+  run "$PWD"/hooks/command
+
+  assert_success
+  assert_output --partial "ran command in docker"
+
+  unstub docker
+}
+
+@test "Prepend ECR domain with no region" {
+  export BUILDKITE_PLUGIN_DOCKER_MOUNT_BUILDKITE_AGENT=false
+  export BUILDKITE_PLUGIN_DOCKER_PREPEND_ECR_DOMAIN=true
+  export BUILDKITE_PLUGIN_DOCKER_ECR_ACCOUNT_ID="123456789012"
+  export BUILDKITE_COMMAND="pwd"
+
+  run "$PWD"/hooks/command
+
+  assert_failure 1
+  assert_output --partial "AWS region should be specified via plugin config"
+}
+
+@test "Prepend ECR domain with no account" {
+  export BUILDKITE_PLUGIN_DOCKER_MOUNT_BUILDKITE_AGENT=false
+  export BUILDKITE_PLUGIN_DOCKER_PREPEND_ECR_DOMAIN=true
+  export BUILDKITE_PLUGIN_DOCKER_ECR_REGION="us-west-1"
+  export BUILDKITE_COMMAND="pwd"
+
+  stub aws \
+    "sts get-caller-identity --query Account --output text : true"
+  run "$PWD"/hooks/command
+
+  assert_failure 1
+  assert_output --partial "AWS account ID required via plugin config or 'aws sts get-caller-identity'"
+}

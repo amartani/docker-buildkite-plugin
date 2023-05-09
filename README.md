@@ -416,6 +416,22 @@ can be found in https://docs.docker.com/config/containers/resource_constraints/#
 
 Example: `0`
 
+### `prepend-ecr-domain` (optional, boolean)
+
+If set to true, prepends the ECR domain `ecr-account-id`.dkr.ecr.`ecr-region`.amazonaws.com/ to the `image` parameter.
+
+### `ecr-account-id` (optional, string)
+
+AWS account ID to use in the ECR domain. Defaults to the current account id determined using `aws sts get-caller-identity`. Has no effect if `prepend-ecr-domain` is not set to true.
+
+Example: `123456789012`
+
+### `ecr-region` (optional, string)
+
+AWS region to use in the ECR domain. Defaults to `AWS_DEFAULT_REGION` environment variable on the agent. Has no effect if `prepend-ecr-domain` is not set to true.
+
+Example: `us-east-1`
+
 ## Developing
 
 To run testing, shellchecks and plugin linting use use `bk run` with the [Buildkite CLI](https://github.com/buildkite/cli).
